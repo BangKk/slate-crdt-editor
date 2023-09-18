@@ -1,0 +1,15 @@
+{
+  "name": "slate-crdt-editor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "workspaces": [
+    "packages/editor"
+  ],
+  "scripts": {
+    "dev": "pnpm --filter editor dev"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
