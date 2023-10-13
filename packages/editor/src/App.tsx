@@ -1,9 +1,11 @@
 import Editor from './Editor';
-
+import "./App.css";
 
 const App = () => {
   return (
-    <Editor />
+    <div className="editor-wrap">
+      <Editor />
+    </div>
   )
 }
 
