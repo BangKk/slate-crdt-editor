@@ -1,101 +1,94 @@
-import React, { Ref, PropsWithChildren } from 'react'
-import ReactDOM from 'react-dom'
-import { cx, css } from '@emotion/css'
+import React, { Ref, PropsWithChildren, ReactNode } from 'react';
+import ReactDOM from 'react-dom';
+import { cx, css } from '@emotion/css';
 
 interface BaseProps {
-  className?: string
-  [key: string]: unknown
+  className?: string;
+  [key: string]: unknown;
 }
 
-export const Button = (
+export const Button = ({
+  className,
+  active,
+  // reversed,
+  disabled,
+  ...props
+}: PropsWithChildren<
   {
-    className,
-    active,
-    reversed,
-    ...props
-  }: PropsWithChildren<
-    {
-      active?: boolean
-      reversed?: boolean
-    } & BaseProps
-  >
-) => (
+    active?: boolean;
+    reversed?: boolean;
+  } & BaseProps
+>) => (
   <span
     {...props}
     className={cx(
       className,
       css`
-        cursor: pointer;
-        color: ${reversed
-          ? active
-            ? 'white'
-            : '#aaa'
-          : active
-          ? 'black'
-          : '#ccc'};
+        cursor: ${disabled ? 'not-allowed' : 'pointer'};
+        color: ${disabled ? '#999' : '#333'};
+        background: ${active && !disabled ? '#eee' : 'transparent'};
+        :hover {
+          background: ${disabled ? 'transparent' : '#eee'};
+        }
       `
     )}
   />
-)
+);
 
+// export const EditorValue = (
+//   {
+//     className,
+//     value,
+//     ...props
+//   }: PropsWithChildren<
+//     {
+//       value:
+//     } & BaseProps
+//   >
+// ) => {
+//   const textLines = value.document.nodes
+//     .map(node => node.text)
+//     .toArray()
+//     .join('\n')
+//   return (
+//     <div
+//       {...props}
+//       className={cx(
+//         className,
+//         css`
+//           margin: 30px -20px 0;
+//         `
+//       )}
+//     >
+//       <div
+//         className={css`
+//           font-size: 14px;
+//           padding: 5px 20px;
+//           color: #404040;
+//           border-top: 2px solid #eeeeee;
+//           background: #f8f8f8;
+//         `}
+//       >
+//         Slate's value as text
+//       </div>
+//       <div
+//         className={css`
+//           color: #404040;
+//           font: 12px monospace;
+//           white-space: pre-wrap;
+//           padding: 10px 20px;
+//           div {
+//             margin: 0 0 0.5em;
+//           }
+//         `}
+//       >
+//         {textLines}
+//       </div>
+//     </div>
+//   )
+// }
 
-export const EditorValue = (
-  {
-    className,
-    value,
-    ...props
-  }: PropsWithChildren<
-    {
-      value: any
-    } & BaseProps
-  >
-) => {
-  const textLines = value.document.nodes
-    .map(node => node.text)
-    .toArray()
-    .join('\n')
-  return (
-    <div
-      {...props}
-      className={cx(
-        className,
-        css`
-          margin: 30px -20px 0;
-        `
-      )}
-    >
-      <div
-        className={css`
-          font-size: 14px;
-          padding: 5px 20px;
-          color: #404040;
-          border-top: 2px solid #eeeeee;
-          background: #f8f8f8;
-        `}
-      >
-        Slate's value as text
-      </div>
-      <div
-        className={css`
-          color: #404040;
-          font: 12px monospace;
-          white-space: pre-wrap;
-          padding: 10px 20px;
-          div {
-            margin: 0 0 0.5em;
-          }
-        `}
-      >
-        {textLines}
-      </div>
-    </div>
-  )
-}
-
-export const Icon = (
-  { className, ...props }: PropsWithChildren<BaseProps>,
-
-) => (
+export const Icon = ({ className, ...props }: PropsWithChildren<BaseProps>) => (
   <span
     {...props}
     className={cx(
@@ -107,7 +100,7 @@ export const Icon = (
       `
     )}
   />
-)
+);
 
 export const Instruction = React.forwardRef(
   (
@@ -129,11 +122,9 @@ export const Instruction = React.forwardRef(
       )}
     />
   )
-)
+);
 
-export const Menu = (
-  { className, ...props }: PropsWithChildren<BaseProps>
-) => (
+export const Menu = ({ className, ...props }: PropsWithChildren<BaseProps>) => (
   <div
     {...props}
     data-test-id="menu"
@@ -150,17 +141,18 @@ export const Menu = (
       `
     )}
   />
-)
+);
 
-export const Portal = ({ children }) => {
+export const Portal = ({ children }: { children: ReactNode }) => {
   return typeof document === 'object'
     ? ReactDOM.createPortal(children, document.body)
-    : null
-}
+    : null;
+};
 
-export const Toolbar = (
-  { className, ...props }: PropsWithChildren<BaseProps>,
-) => (
+export const Toolbar = ({
+  className,
+  ...props
+}: PropsWithChildren<BaseProps>) => (
   <Menu
     {...props}
     className={cx(
@@ -174,4 +166,22 @@ export const Toolbar = (
       `
     )}
   />
-)
+);
+
+export const Devider = ({ className }: BaseProps) => (
+  <span
+    className={cx(
+      className,
+      css`
+        display: inline-block;
+        width: 1px;
+        height: 18px;
+        margin-left: 15px;
+        background: #999;
+        vertical-align: middle;
+        opacity: 0.6;
+        user-select: none;
+      `
+    )}
+  />
+);

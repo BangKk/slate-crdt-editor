@@ -1,17 +1,24 @@
-import { ReactNode, useCallback, useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import isHotkey from 'is-hotkey';
 import { Editable, withReact, useSlate, Slate } from 'slate-react';
+import { withHistory } from 'slate-history';
 import {
   Editor,
   Transforms,
   createEditor,
   Descendant,
   Element as SlateElement,
-  BaseEditor,
 } from 'slate';
-import { withHistory } from 'slate-history';
-
-import { Button, Icon, Toolbar } from './components';
+import { Button, Icon, Toolbar, Devider } from './components';
+import {
+  CustomEditor,
+  CustomElement,
+  CustomText,
+  CustomMark,
+  ELEMENT_TYPE_ENUM,
+  ElementType,
+  Align,
+} from './editor.type';
 
 const HOTKEYS = {
   'mod+b': 'bold',
@@ -21,20 +28,24 @@ const HOTKEYS = {
 };
 
 const LIST_TYPES = ['numbered-list', 'bulleted-list'];
-const TEXT_ALIGN_TYPES = ['left', 'center', 'right', 'justify'];
+const TEXT_ALIGN_TYPES: Align[] = ['left', 'center', 'right', 'justify'];
 
 const RichTextExample = () => {
-  const renderElement = useCallback(props => <Element {...props} />, []);
-  const renderLeaf = useCallback(props => <Leaf {...props} />, []);
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
 
   return (
     <Slate editor={editor} initialValue={initialValue}>
       <Toolbar>
-        <MarkButton format="bold" icon="format_bold" />
-        <MarkButton format="italic" icon="format_italic" />
-        <MarkButton format="underline" icon="format_underlined" />
-        <MarkButton format="code" icon="code" />
+        <HistoryButton mark="undo" icon="undo" />
+        <HistoryButton mark="redo" icon="redo" />
+        <Devider />
+
+        <MarkButton mark="bold" icon="format_bold" />
+        <MarkButton mark="italic" icon="format_italic" />
+        <MarkButton mark="underline" icon="format_underlined" />
+        <MarkButton mark="code" icon="code" />
+        <Devider />
+
         <BlockButton format="heading-one" icon="looks_one" />
         <BlockButton format="heading-two" icon="looks_two" />
         <BlockButton format="block-quote" icon="format_quote" />
@@ -46,8 +57,8 @@ const RichTextExample = () => {
         <BlockButton format="justify" icon="format_align_justify" />
       </Toolbar>
       <Editable
-        renderElement={renderElement}
-        renderLeaf={renderLeaf}
+        renderElement={props => <Element {...props} />}
+        renderLeaf={props => <Leaf {...props} />}
         placeholder="Enter some rich text…"
         spellCheck
         autoFocus
@@ -55,7 +66,9 @@ const RichTextExample = () => {
           for (const hotkey in HOTKEYS) {
             if (isHotkey(hotkey, event)) {
               event.preventDefault();
-              const mark = HOTKEYS[hotkey as keyof typeof HOTKEYS];
+              const mark = HOTKEYS[
+                hotkey as keyof typeof HOTKEYS
+              ] as CustomMark;
               toggleMark(editor, mark);
             }
           }
@@ -65,11 +78,11 @@ const RichTextExample = () => {
   );
 };
 
-const toggleBlock = (editor: BaseEditor, format: string) => {
+const toggleBlock = (editor: CustomEditor, format: ElementType | Align) => {
   const isActive = isBlockActive(
     editor,
     format,
-    TEXT_ALIGN_TYPES.includes(format) ? 'align' : 'type'
+    TEXT_ALIGN_TYPES.includes(format as Align) ? 'align' : 'type'
   );
   const isList = LIST_TYPES.includes(format);
 
@@ -78,41 +91,45 @@ const toggleBlock = (editor: BaseEditor, format: string) => {
       !Editor.isEditor(n) &&
       SlateElement.isElement(n) &&
       LIST_TYPES.includes(n.type) &&
-      !TEXT_ALIGN_TYPES.includes(format),
+      !TEXT_ALIGN_TYPES.includes(format as Align),
     split: true,
   });
-  let newProperties: Partial<SlateElement>;
-  if (TEXT_ALIGN_TYPES.includes(format)) {
+  let newProperties: Partial<CustomElement>;
+  if (TEXT_ALIGN_TYPES.includes(format as Align)) {
     newProperties = {
-      align: isActive ? undefined : format,
+      align: isActive ? undefined : (format as Align),
     };
   } else {
     newProperties = {
-      type: isActive ? 'paragraph' : isList ? 'list-item' : format,
+      type: isActive
+        ? 'paragraph'
+        : isList
+        ? 'list-item'
+        : (format as ElementType),
     };
   }
   Transforms.setNodes<SlateElement>(editor, newProperties);
 
   if (!isActive && isList) {
-    const block = { type: format, children: [] };
-    Transforms.wrapNodes(editor, block);
+    const block = { type: format as ElementType, children: [] };
+    Transforms.wrapNodes(editor, block as CustomElement);
   }
 };
 
-const toggleMark = (editor: BaseEditor, format: string) => {
-  const isActive = isMarkActive(editor, format);
+const toggleMark = (editor: CustomEditor, mark: CustomMark) => {
+  const isActive = isMarkActive(editor, mark);
 
   if (isActive) {
-    Editor.removeMark(editor, format);
+    Editor.removeMark(editor, mark);
   } else {
-    Editor.addMark(editor, format, true);
+    Editor.addMark(editor, mark, true);
   }
 };
 
 const isBlockActive = (
-  editor: BaseEditor,
+  editor: CustomEditor,
   format: string,
-  blockType = 'type'
+  blockType: 'type' | 'align' = 'type'
 ) => {
   const { selection } = editor;
   if (!selection) return false;
@@ -130,47 +147,53 @@ const isBlockActive = (
   return !!match;
 };
 
-const isMarkActive = (editor: BaseEditor, format: string) => {
+const isMarkActive = (editor: CustomEditor, format: CustomMark) => {
   const marks = Editor.marks(editor);
   return marks ? marks[format] === true : false;
 };
 
-const Element = ({ attributes, children, element }: {  attributes: Record<string, string>;
+const Element = ({
+  attributes,
+  children,
+  element,
+}: {
+  attributes: Record<string, string | boolean>;
   children: ReactNode;
-  element: Record<string, string>;}) => {
+  element: CustomElement;
+}) => {
   const style = { textAlign: element.align };
   switch (element.type) {
-    case 'block-quote':
+    case ELEMENT_TYPE_ENUM['block-quote']:
       return (
         <blockquote style={style} {...attributes}>
           {children}
         </blockquote>
       );
-    case 'bulleted-list':
+    case ELEMENT_TYPE_ENUM['bulleted-list']:
       return (
         <ul style={style} {...attributes}>
           {children}
         </ul>
       );
-    case 'heading-one':
+    case ELEMENT_TYPE_ENUM['heading-one']:
       return (
         <h1 style={style} {...attributes}>
           {children}
         </h1>
       );
-    case 'heading-two':
+    case ELEMENT_TYPE_ENUM['heading-two']:
       return (
         <h2 style={style} {...attributes}>
           {children}
         </h2>
       );
-    case 'list-item':
+    case ELEMENT_TYPE_ENUM['list-item']:
       return (
         <li style={style} {...attributes}>
           {children}
         </li>
       );
-    case 'numbered-list':
+    case ELEMENT_TYPE_ENUM['numbered-list']:
       return (
         <ol style={style} {...attributes}>
           {children}
@@ -190,9 +213,9 @@ const Leaf = ({
   children,
   leaf,
 }: {
-  attributes: Record<string, string>;
+  attributes: Record<string, boolean>;
   children: ReactNode;
-  leaf: Record<string, boolean>;
+  leaf: CustomText;
 }) => {
   if (leaf.bold) {
     children = <strong>{children}</strong>;
@@ -213,14 +236,20 @@ const Leaf = ({
   return <span {...attributes}>{children}</span>;
 };
 
-const BlockButton = ({ format, icon }: { format: string; icon: string }) => {
+const BlockButton = ({
+  format,
+  icon,
+}: {
+  format: ElementType | Align;
+  icon: string;
+}) => {
   const editor = useSlate();
   return (
     <Button
       active={isBlockActive(
         editor,
         format,
-        TEXT_ALIGN_TYPES.includes(format) ? 'align' : 'type'
+        TEXT_ALIGN_TYPES.includes(format as Align) ? 'align' : 'type'
       )}
       onMouseDown={(event: Event) => {
         event.preventDefault();
@@ -232,14 +261,38 @@ const BlockButton = ({ format, icon }: { format: string; icon: string }) => {
   );
 };
 
-const MarkButton = ({ format, icon }: { format: string; icon: string }) => {
+const MarkButton = ({ mark, icon }: { mark: CustomMark; icon: string }) => {
   const editor = useSlate();
   return (
     <Button
-      active={isMarkActive(editor, format)}
+      active={isMarkActive(editor, mark)}
       onMouseDown={(event: Event) => {
         event.preventDefault();
-        toggleMark(editor, format);
+        toggleMark(editor, mark);
+      }}
+    >
+      <Icon>{icon}</Icon>
+    </Button>
+  );
+};
+
+const HistoryButton = ({
+  mark,
+  icon,
+}: {
+  mark: 'undo' | 'redo';
+  icon: string;
+}) => {
+  const editor = useSlate();
+
+  return (
+    <Button
+      disabled={
+        editor.history[mark === 'redo' ? 'redos' : 'undos'].length === 0
+      }
+      onMouseDown={(event: Event) => {
+        event.preventDefault();
+        editor[mark]();
       }}
     >
       <Icon>{icon}</Icon>
