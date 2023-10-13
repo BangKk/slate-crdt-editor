@@ -1,4 +1,4 @@
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import isHotkey from 'is-hotkey';
 import { Editable, withReact, useSlate, Slate } from 'slate-react';
 import { withHistory } from 'slate-history';
@@ -9,6 +9,11 @@ import {
   Descendant,
   Element as SlateElement,
 } from 'slate';
+import * as Y from 'yjs';
+import { YjsEditor, withYjs, withCursors } from '@slate-yjs/core';
+import LiveblocksProvider from '@liveblocks/yjs';
+import { JsonObject, LsonObject, BaseUserMeta, Json } from '@liveblocks/client';
+import { Cursors } from './collaborative-components';
 import { Button, Icon, Toolbar, Devider } from './components';
 import {
   CustomEditor,
@@ -19,6 +24,8 @@ import {
   ElementType,
   Align,
 } from './editor.type';
+import { useRoom } from './liveblocks.config';
+import './editor.css';
 
 const HOTKEYS = {
   'mod+b': 'bold',
@@ -30,8 +37,81 @@ const HOTKEYS = {
 const LIST_TYPES = ['numbered-list', 'bulleted-list'];
 const TEXT_ALIGN_TYPES: Align[] = ['left', 'center', 'right', 'justify'];
 
-const RichTextExample = () => {
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+type Provider = LiveblocksProvider<JsonObject, LsonObject, BaseUserMeta, Json>;
+
+const CollaboradEditor = () => {
+  const room = useRoom();
+  const [connected, setConnected] = useState(false);
+  const [sharedType, setSharedType] = useState<Y.XmlText>();
+  const [provider, setProvider] = useState<Provider>();
+
+  useEffect(() => {
+    const yDoc = new Y.Doc();
+    const sharedDoc = yDoc.get('slate', Y.XmlText);
+
+    const yProvider = new LiveblocksProvider(room, yDoc);
+
+    yProvider.on('sync', setConnected);
+    setSharedType(sharedDoc as Y.XmlText);
+    setProvider(yProvider);
+
+    return () => {
+      yDoc?.destroy();
+      yProvider?.off('sync', setConnected);
+      yProvider?.destroy();
+    };
+  }, [room]);
+
+  if (!connected || !sharedType || !provider) {
+    return <div>Connecting...</div>;
+  }
+
+  return <SlateEditor sharedType={sharedType} provider={provider} />;
+};
+
+const SlateEditor = ({
+  sharedType,
+  provider,
+}: {
+  sharedType: Y.XmlText;
+  provider: Provider;
+}) => {
+  const editor = useMemo(() => {
+    const user = Math.random().toString(16).slice(2, 8);
+    const editor = withHistory(
+      withReact(
+        withCursors(
+          withYjs(createEditor(), sharedType),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          provider.awareness as any,
+          {
+            data: {
+              name: `user_${user}`,
+              color: `#${user}`,
+            },
+          }
+        )
+      )
+    );
+
+    const { normalizeNode } = editor;
+    editor.normalizeNode = entry => {
+      const [node] = entry;
+
+      if (!Editor.isEditor(node) || node.children.length > 0) {
+        return normalizeNode(entry);
+      }
+
+      Transforms.insertNodes(editor, initialValue, { at: [0] });
+    };
+
+    return editor;
+  }, [sharedType, provider.awareness]);
+
+  useEffect(() => {
+    YjsEditor.connect(editor);
+    return () => YjsEditor.disconnect(editor);
+  }, [editor]);
 
   return (
     <Slate editor={editor} initialValue={initialValue}>
@@ -56,24 +136,26 @@ const RichTextExample = () => {
         <BlockButton format="right" icon="format_align_right" />
         <BlockButton format="justify" icon="format_align_justify" />
       </Toolbar>
-      <Editable
-        renderElement={props => <Element {...props} />}
-        renderLeaf={props => <Leaf {...props} />}
-        placeholder="Enter some rich text…"
-        spellCheck
-        autoFocus
-        onKeyDown={event => {
-          for (const hotkey in HOTKEYS) {
-            if (isHotkey(hotkey, event)) {
-              event.preventDefault();
-              const mark = HOTKEYS[
-                hotkey as keyof typeof HOTKEYS
-              ] as CustomMark;
-              toggleMark(editor, mark);
+      <Cursors>
+        <Editable
+          renderElement={props => <Element {...props} />}
+          renderLeaf={props => <Leaf {...props} />}
+          placeholder="Enter some rich text…"
+          spellCheck
+          autoFocus
+          onKeyDown={event => {
+            for (const hotkey in HOTKEYS) {
+              if (isHotkey(hotkey, event)) {
+                event.preventDefault();
+                const mark = HOTKEYS[
+                  hotkey as keyof typeof HOTKEYS
+                ] as CustomMark;
+                toggleMark(editor, mark);
+              }
             }
-          }
-        }}
-      />
+          }}
+        />
+      </Cursors>
     </Slate>
   );
 };
@@ -336,4 +418,4 @@ const initialValue: Descendant[] = [
   },
 ];
 
-export default RichTextExample;
+export default CollaboradEditor;
