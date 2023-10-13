@@ -9,14 +9,23 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
+  "main": "src/Editor.tsx",
   "dependencies": {
     "@emotion/css": "^11.11.2",
+    "@liveblocks/client": "^1.4.6",
+    "@liveblocks/react": "^1.4.6",
+    "@liveblocks/yjs": "^1.4.6",
+    "@mui/icons-material": "^5.14.9",
+    "@slate-yjs/core": "^1.0.2",
+    "@slate-yjs/react": "^1.1.0",
+    "install": "^0.13.0",
     "is-hotkey": "^0.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "slate": "^0.94.1",
     "slate-history": "^0.93.0",
-    "slate-react": "^0.98.3"
+    "slate-react": "^0.98.3",
+    "yjs": "^13.6.8"
   },
   "devDependencies": {
     "@types/is-hotkey": "^0.1.7",
