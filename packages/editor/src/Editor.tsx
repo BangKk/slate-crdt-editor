@@ -115,47 +115,49 @@ const SlateEditor = ({
 
   return (
     <Slate editor={editor} initialValue={initialValue}>
-      <Toolbar>
-        <HistoryButton mark="undo" icon="undo" />
-        <HistoryButton mark="redo" icon="redo" />
-        <Devider />
+      <div className="editor-container">
+        <Toolbar>
+          <HistoryButton mark="undo" icon="undo" />
+          <HistoryButton mark="redo" icon="redo" />
+          <Devider />
 
-        <MarkButton mark="bold" icon="format_bold" />
-        <MarkButton mark="italic" icon="format_italic" />
-        <MarkButton mark="underline" icon="format_underlined" />
-        <MarkButton mark="code" icon="code" />
-        <Devider />
+          <MarkButton mark="bold" icon="format_bold" />
+          <MarkButton mark="italic" icon="format_italic" />
+          <MarkButton mark="underline" icon="format_underlined" />
+          <MarkButton mark="code" icon="code" />
+          <Devider />
 
-        <BlockButton format="heading-one" icon="looks_one" />
-        <BlockButton format="heading-two" icon="looks_two" />
-        <BlockButton format="block-quote" icon="format_quote" />
-        <BlockButton format="numbered-list" icon="format_list_numbered" />
-        <BlockButton format="bulleted-list" icon="format_list_bulleted" />
-        <BlockButton format="left" icon="format_align_left" />
-        <BlockButton format="center" icon="format_align_center" />
-        <BlockButton format="right" icon="format_align_right" />
-        <BlockButton format="justify" icon="format_align_justify" />
-      </Toolbar>
-      <Cursors>
-        <Editable
-          renderElement={props => <Element {...props} />}
-          renderLeaf={props => <Leaf {...props} />}
-          placeholder="Enter some rich text…"
-          spellCheck
-          autoFocus
-          onKeyDown={event => {
-            for (const hotkey in HOTKEYS) {
-              if (isHotkey(hotkey, event)) {
-                event.preventDefault();
-                const mark = HOTKEYS[
-                  hotkey as keyof typeof HOTKEYS
-                ] as CustomMark;
-                toggleMark(editor, mark);
+          <BlockButton format="heading-one" icon="looks_one" />
+          <BlockButton format="heading-two" icon="looks_two" />
+          <BlockButton format="block-quote" icon="format_quote" />
+          <BlockButton format="numbered-list" icon="format_list_numbered" />
+          <BlockButton format="bulleted-list" icon="format_list_bulleted" />
+          <BlockButton format="left" icon="format_align_left" />
+          <BlockButton format="center" icon="format_align_center" />
+          <BlockButton format="right" icon="format_align_right" />
+          <BlockButton format="justify" icon="format_align_justify" />
+        </Toolbar>
+        <Cursors>
+          <Editable
+            renderElement={props => <Element {...props} />}
+            renderLeaf={props => <Leaf {...props} />}
+            placeholder="Enter some rich text…"
+            spellCheck
+            autoFocus
+            onKeyDown={event => {
+              for (const hotkey in HOTKEYS) {
+                if (isHotkey(hotkey, event)) {
+                  event.preventDefault();
+                  const mark = HOTKEYS[
+                    hotkey as keyof typeof HOTKEYS
+                  ] as CustomMark;
+                  toggleMark(editor, mark);
+                }
               }
-            }
-          }}
-        />
-      </Cursors>
+            }}
+          />
+        </Cursors>
+      </div>
     </Slate>
   );
 };

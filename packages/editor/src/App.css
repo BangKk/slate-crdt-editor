@@ -1,3 +1,6 @@
-.editor-wrap {
-  padding: 50px 4em;
+body,
+html,
+#root {
+  height: 100%;
+  margin: 0;
 }

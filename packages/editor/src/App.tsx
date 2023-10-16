@@ -6,13 +6,11 @@ import './App.css';
 
 const App = () => {
   return (
-    <div className="editor-wrap">
-      <RoomProvider id="my-room" initialPresence={{}}>
-        <ClientSideSuspense fallback="Loading...">
-          {() => <CollaboradEditor />}
-        </ClientSideSuspense>
-      </RoomProvider>
-    </div>
+    <RoomProvider id="my-room" initialPresence={{}}>
+      <ClientSideSuspense fallback="Loading...">
+        {() => <CollaboradEditor />}
+      </ClientSideSuspense>
+    </RoomProvider>
   );
 };
 
